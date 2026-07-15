@@ -10,6 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Persistent mapping between a short code and the original long URL.
@@ -26,6 +29,8 @@ import jakarta.persistence.Table;
             @Index(name = "idx_url_mapping_url_hash", columnList = "url_hash")
         }
 )
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UrlMapping {
 
     /** Maximum supported length of an original URL. */
@@ -50,10 +55,6 @@ public class UrlMapping {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    /** Protected no-arg constructor required by JPA. */
-    protected UrlMapping() {
-    }
-
     /**
      * Creates a new mapping.
      *
@@ -71,29 +72,5 @@ public class UrlMapping {
         this.urlHash = Objects.requireNonNull(urlHash, "urlHash must not be null");
         this.custom = custom;
         this.createdAt = Instant.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getLongUrl() {
-        return longUrl;
-    }
-
-    public String getUrlHash() {
-        return urlHash;
-    }
-
-    public boolean isCustom() {
-        return custom;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 }

@@ -1,6 +1,5 @@
 package com.shiva.url_shortener.service;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -13,6 +12,9 @@ import com.shiva.url_shortener.exception.AliasAlreadyExistsException;
 import com.shiva.url_shortener.exception.CodeGenerationException;
 import com.shiva.url_shortener.exception.CodeNotFoundException;
 import com.shiva.url_shortener.repository.UrlMappingRepository;
+
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Coordinates URL shortening and resolution.
@@ -30,29 +32,22 @@ import com.shiva.url_shortener.repository.UrlMappingRepository;
  * </ul>
  */
 @Service
+@RequiredArgsConstructor
 public class UrlShortenerService {
 
     /** Maximum number of code regeneration attempts before giving up. */
     private static final int MAX_GENERATION_ATTEMPTS = 5;
 
+    @NonNull
     private final UrlMappingRepository repository;
+    @NonNull
     private final ShortCodeGenerator codeGenerator;
+    @NonNull
     private final UrlValidator urlValidator;
+    @NonNull
     private final AliasValidator aliasValidator;
+    @NonNull
     private final UrlHasher urlHasher;
-
-    public UrlShortenerService(
-            final UrlMappingRepository repository,
-            final ShortCodeGenerator codeGenerator,
-            final UrlValidator urlValidator,
-            final AliasValidator aliasValidator,
-            final UrlHasher urlHasher) {
-        this.repository = Objects.requireNonNull(repository);
-        this.codeGenerator = Objects.requireNonNull(codeGenerator);
-        this.urlValidator = Objects.requireNonNull(urlValidator);
-        this.aliasValidator = Objects.requireNonNull(aliasValidator);
-        this.urlHasher = Objects.requireNonNull(urlHasher);
-    }
 
     /**
      * Shortens a URL, optionally under a custom alias.

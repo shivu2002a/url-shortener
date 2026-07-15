@@ -1,7 +1,6 @@
 package com.shiva.url_shortener.web;
 
 import java.net.URI;
-import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,17 +17,16 @@ import com.shiva.url_shortener.service.UrlShortenerService;
 import com.shiva.url_shortener.web.dto.ShortenRequest;
 import com.shiva.url_shortener.web.dto.ShortenResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * REST endpoints for shortening URLs and redirecting short codes.
  */
 @RestController
+@RequiredArgsConstructor
 public class UrlShortenerController {
 
     private final UrlShortenerService service;
-
-    public UrlShortenerController(final UrlShortenerService service) {
-        this.service = Objects.requireNonNull(service);
-    }
 
     /**
      * Shortens a URL. Returns {@code 201 Created} for a new mapping or {@code 200 OK} when

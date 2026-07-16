@@ -1,5 +1,7 @@
 package com.shiva.url_shortener.web;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,11 +20,14 @@ import com.shiva.url_shortener.web.dto.ErrorResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     /**
      * Handles validation failures for URLs and aliases as {@code 400 Bad Request}.
      */
     @ExceptionHandler({InvalidUrlException.class, InvalidAliasException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(final RuntimeException ex) {
+        log.debug("Bad request: {}", ex.getMessage());
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
@@ -47,6 +52,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(CodeGenerationException.class)
     public ResponseEntity<ErrorResponse> handleGenerationFailure(final CodeGenerationException ex) {
+        log.error("Code generation exhausted: {}", ex.getMessage());
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 

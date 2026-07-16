@@ -2,9 +2,13 @@ package com.shiva.url_shortener.service;
 
 import java.security.SecureRandom;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.shiva.url_shortener.config.ShortCodeProperties;
+
+import jakarta.annotation.PostConstruct;
 
 /**
  * A {@link ShortCodeGenerator} strategy that produces random Base62 codes.
@@ -22,6 +26,8 @@ import com.shiva.url_shortener.config.ShortCodeProperties;
 @Component
 public class Base62ShortCodeGenerator implements ShortCodeGenerator {
 
+    private static final Logger log = LoggerFactory.getLogger(Base62ShortCodeGenerator.class);
+
     /** URL-safe Base62 alphabet. */
     private static final char[] ALPHABET =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
@@ -36,6 +42,12 @@ public class Base62ShortCodeGenerator implements ShortCodeGenerator {
      */
     public Base62ShortCodeGenerator(final ShortCodeProperties properties) {
         this.codeLength = properties.length();
+    }
+
+    @PostConstruct
+    void logConfiguration() {
+        log.info("Short-code generator initialised: strategy=Base62Random, length={}, keyspace=62^{}",
+                codeLength, codeLength);
     }
 
     @Override

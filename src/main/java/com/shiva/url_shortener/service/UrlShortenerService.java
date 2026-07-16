@@ -2,6 +2,8 @@ package com.shiva.url_shortener.service;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UrlShortenerService {
+
+    private static final Logger log = LoggerFactory.getLogger(UrlShortenerService.class);
 
     /** Maximum number of code regeneration attempts before giving up. */
     private static final int MAX_GENERATION_ATTEMPTS = 5;
@@ -83,21 +87,26 @@ public class UrlShortenerService {
     public String resolve(final String code) {
         return repository.findByCode(code)
                 .map(UrlMapping::getLongUrl)
-                .orElseThrow(() -> new CodeNotFoundException("No mapping for code: " + code));
+                .orElseThrow(() -> {
+                    log.debug("Resolution failed: no mapping for code={}", code);
+                    return new CodeNotFoundException("No mapping for code: " + code);
+                });
     }
 
     private ShortenResult createWithAlias(
             final String alias, final String normalizedUrl, final String urlHash) {
         aliasValidator.validate(alias);
         if (repository.existsByCode(alias)) {
+            log.warn("Custom alias conflict: alias={} is already in use", alias);
             throw new AliasAlreadyExistsException("Alias already in use: " + alias);
         }
         try {
             final UrlMapping saved =
                     repository.saveAndFlush(new UrlMapping(alias, normalizedUrl, urlHash, true));
+            log.info("Created mapping with custom alias: code={}", alias);
             return new ShortenResult(saved, true);
         } catch (final DataIntegrityViolationException e) {
-            // Lost a race with a concurrent request for the same alias.
+            log.warn("Concurrent alias conflict: alias={}", alias);
             throw new AliasAlreadyExistsException("Alias already in use: " + alias);
         }
     }
@@ -108,19 +117,25 @@ public class UrlShortenerService {
                 repository.findFirstByUrlHashAndCustomFalseOrderByIdAsc(urlHash)
                         .filter(mapping -> mapping.getLongUrl().equals(normalizedUrl));
         if (existing.isPresent()) {
+            log.debug("Deduplication hit: returning existing code={} for urlHash={}",
+                    existing.get().getCode(), urlHash);
             return new ShortenResult(existing.get(), false);
         }
 
-        for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
+        for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
             final String code = codeGenerator.generate();
             try {
                 final UrlMapping saved = repository.saveAndFlush(
                         new UrlMapping(code, normalizedUrl, urlHash, false));
+                log.info("Created mapping: code={}, attempt={}", code, attempt);
                 return new ShortenResult(saved, true);
             } catch (final DataIntegrityViolationException e) {
-                // Generated code collided with an existing one; try again.
+                log.warn("Code collision on attempt {}/{}: code={}", attempt,
+                        MAX_GENERATION_ATTEMPTS, code);
             }
         }
+        log.error("Exhausted {} code generation attempts for urlHash={}", MAX_GENERATION_ATTEMPTS,
+                urlHash);
         throw new CodeGenerationException(
                 "Failed to generate a unique code after " + MAX_GENERATION_ATTEMPTS + " attempts");
     }

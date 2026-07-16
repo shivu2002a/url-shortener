@@ -13,7 +13,7 @@ A Spring Boot service that turns long URLs into short codes and redirects visito
 
 ## Prerequisites
 
-- **Java 17+** (JDK, not just JRE) — [download from Adoptium](https://adoptium.net/) or install via `brew install openjdk@17`
+- **Java 17+** (JDK, not just JRE)
 - Maven 3.9+ is **not** required — the included `./mvnw` wrapper downloads it automatically
 
 Verify Java is installed:

@@ -111,6 +111,58 @@ class UrlShortenerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void blankUrlReturns400() throws Exception {
+        mockMvc.perform(shortenRequest("   ", null))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void missingBodyReturns400() throws Exception {
+        mockMvc.perform(post("/shorten")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void customAliasForAlreadyShortenedUrlCreatesSecondMapping() throws Exception {
+        final String longUrl = "https://multi.example.com/page";
+
+        // First shorten with auto-generated code
+        final MvcResult auto = mockMvc.perform(shortenRequest(longUrl, null))
+                .andExpect(status().isCreated())
+                .andReturn();
+        final String autoCode = readJson(auto, "code");
+
+        // Second shorten with custom alias — should create a new mapping
+        final String alias = "multiAlias";
+        mockMvc.perform(shortenRequest(longUrl, alias))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code", is(alias)));
+
+        // Both codes should resolve to the same URL
+        mockMvc.perform(get("/{code}", autoCode))
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", longUrl));
+        mockMvc.perform(get("/{code}", alias))
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", longUrl));
+    }
+
+    @Test
+    void normalizedUrlsDeduplicate() throws Exception {
+        // Same URL with different host casing should dedup
+        final MvcResult first = mockMvc.perform(shortenRequest("https://Example.COM/path", null))
+                .andExpect(status().isCreated())
+                .andReturn();
+        final String firstCode = readJson(first, "code");
+
+        mockMvc.perform(shortenRequest("https://example.com/path", null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(firstCode)));
+    }
+
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
             shortenRequest(final String url, final String alias) throws Exception {
         return post("/shorten")

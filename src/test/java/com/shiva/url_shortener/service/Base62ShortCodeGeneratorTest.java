@@ -7,11 +7,14 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
+import com.shiva.url_shortener.config.ShortCodeProperties;
+
 class Base62ShortCodeGeneratorTest {
 
     private static final Pattern BASE62_SEVEN = Pattern.compile("^[A-Za-z0-9]{7}$");
 
-    private final ShortCodeGenerator generator = new Base62ShortCodeGenerator();
+    private final ShortCodeGenerator generator =
+            new Base62ShortCodeGenerator(new ShortCodeProperties(7));
 
     @Test
     void generatesSevenCharacterBase62Codes() {
